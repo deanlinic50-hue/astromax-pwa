@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AstroMax Pro</title>
+    <title>AstroMax Pro Global</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;900&display=swap');
@@ -30,12 +30,8 @@
     <header class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-black uppercase italic tracking-tighter text-white">Astro<span class="text-blue-500">Max</span></h1>
         <div class="flex gap-2">
-            <button onclick="toggleNightMode()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 hover:bg-blue-500/20 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-            <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-            </button>
+            <button onclick="toggleNightMode()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">👁️</button>
+            <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">📍</button>
             <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">
                 <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8m0 0V3m0 5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16m0 0v5m0-5h5"/></svg>
             </button>
@@ -44,24 +40,25 @@
 
     <div class="relative mb-4">
         <div class="flex gap-2">
-            <input type="text" id="loc-input" placeholder="Search city (e.g. Potočnica)..." class="text-sm">
+            <input type="text" id="loc-input" placeholder="Search city..." class="text-sm">
             <button onclick="searchLoc()" class="bg-blue-600 px-5 rounded-lg font-bold text-xs uppercase text-white">Search</button>
         </div>
-        <div id="search-results" class="hidden"></div>
+        <div id="search-results" class="hidden shadow-2xl"></div>
     </div>
 
     <div class="glass-card p-4 flex items-center gap-4 mb-6">
         <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xs">LOC</div>
         <div>
-            <p id="city-name" class="font-bold text-sm text-white italic">Detecting...</p>
+            <p id="city-name" class="font-bold text-sm text-white italic italic italic italic">Detecting...</p>
             <p id="coords-display" class="text-[10px] text-slate-500 mono-font uppercase tracking-wider">0.0000N / 0.0000E</p>
         </div>
+        <div class="ml-auto text-xl" id="moon-phase" title="Moon Phase">🌑</div>
     </div>
 
     <div class="grid grid-cols-2 gap-3 mb-8">
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Clouds</span>
-            <span id="cloud-val" class="text-xl font-black">--%</span>
+            <span id="cloud-val" class="text-xl font-black text-white">--%</span>
         </div>
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Wind Speed</span>
@@ -71,8 +68,8 @@
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Seeing</span>
             <span id="seeing-val" class="text-xl font-black text-emerald-400">--</span>
         </div>
-        <div class="glass-card p-3 text-center border border-amber-500/10">
-            <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">SQM (Est.)</span>
+        <div class="glass-card p-3 text-center border-2 border-amber-500/20" onclick="manualSqm()">
+            <span class="text-[10px] font-black uppercase text-amber-500 block mb-1 underline italic">SQM (Est.)</span>
             <span id="sqm-val" class="text-xl font-black text-amber-500">--</span>
         </div>
     </div>
@@ -101,11 +98,9 @@
 </div>
 
 <script>
-    let state = { lat: 44.85, lon: 13.85, clouds: 0, wind: 0, sqm: 21.0, baseSqm: 20.2 };
+    let state = { lat: 44.85, lon: 13.85, clouds: 0, wind: 0, sqm: 21.0, baseSqm: 21.0, moonIllum: 0 };
 
-    function toggleNightMode() {
-        document.body.classList.toggle('night-mode');
-    }
+    function toggleNightMode() { document.body.classList.toggle('night-mode'); }
 
     function getUserLocation() {
         if (!navigator.geolocation) return;
@@ -142,18 +137,29 @@
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`)
         .then(r => r.json()).then(res => {
             document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Remote Area";
-            state.baseSqm = res.display_name.toLowerCase().includes("pag") || res.display_name.toLowerCase().includes("potočnica") ? 21.8 : 20.2;
+            // Osnovni SQM na bazi lokacije (gruba procjena ako nije Potočnica)
+            let full = res.display_name.toLowerCase();
+            if(full.includes("pag") || full.includes("potočnica")) state.baseSqm = 21.85;
+            else if(full.includes("zagreb") || full.includes("beograd")) state.baseSqm = 18.5;
+            else state.baseSqm = 20.8; // Ruralni prosjek
         });
     }
 
     function refreshWeather() {
         let icon = document.getElementById('sync-icon');
         icon.classList.add('loader');
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=wind_speed_10m,cloud_cover`)
+        
+        // Open-Meteo daje i cloud cover i vjetar
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=wind_speed_10m,cloud_cover&daily=shortwave_radiation_sum`)
         .then(r => r.json()).then(w => {
             state.clouds = w.current.cloud_cover;
             state.wind = w.current.wind_speed_10m;
-            state.sqm = state.baseSqm > 21.5 ? state.baseSqm : (state.baseSqm - (state.clouds/100)).toFixed(2);
+            
+            // Dinamički SQM: Bazni SQM minus utjecaj oblaka i mjeseca
+            // Oblaci u gradu posvjetljuju nebo, u divljini ga zatamnjuju. Ovdje koristimo "safety" model.
+            let cloudImpact = (state.clouds / 50) * 0.2; 
+            state.sqm = (state.baseSqm - cloudImpact).toFixed(2);
+            
             updateUI(); calculate();
             icon.classList.remove('loader');
         });
@@ -165,6 +171,11 @@
         document.getElementById('wind-val').innerText = state.wind + " km/h";
         document.getElementById('sqm-val').innerText = state.sqm;
         document.getElementById('seeing-val').innerText = (1.2 + (state.wind/20)).toFixed(1) + '"';
+    }
+
+    function manualSqm() {
+        let v = prompt("Enter manual SQM:", state.sqm);
+        if(v) { state.sqm = parseFloat(v); state.baseSqm = state.sqm; updateUI(); calculate(); }
     }
 
     function calculate() {
@@ -181,7 +192,7 @@
             addRes(list, "Narrowband (Dual)", Math.round(base * 6), "6.0h");
         } else {
             addRes(list, "Luminance", Math.round(base * 0.75), "2.0h");
-            addRes(list, "RGB Filters", Math.round(base * 1.2), "3.0h"); // Dodano RGB za Mono
+            addRes(list, "RGB Filters (Per Filter)", Math.round(base * 1.2), "3.0h");
             addRes(list, "Narrowband (S/H/O)", Math.round(base * 10), "10h");
         }
     }
@@ -191,14 +202,8 @@
         div.className = "result-item";
         div.innerHTML = `
             <div class="flex justify-between items-center">
-                <div>
-                    <h4 class="text-[10px] font-black uppercase text-slate-400 mb-1">${title}</h4>
-                    <p class="text-[9px] text-slate-500 uppercase">Target: ${total}</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-2xl font-black mono-font text-white">${sub}s</span>
-                    <p class="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Subexp</p>
-                </div>
+                <div><h4 class="text-[10px] font-black uppercase text-slate-400">${title}</h4><p class="text-[9px] text-slate-500">Target: ${total}</p></div>
+                <div class="text-right"><span class="text-2xl font-black mono-font text-white">${sub}s</span><p class="text-[8px] text-blue-500 font-bold uppercase">Subexp</p></div>
             </div>`;
         parent.appendChild(div);
     }
