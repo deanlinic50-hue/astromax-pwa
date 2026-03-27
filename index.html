@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroMax Widget</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AstroMax">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        /* Ovdje možeš dodati boje i fontove ako želiš, 
+           ali za početak ostavljamo tvoj tekstualni stil */
+        body { font-family: sans-serif; background-color: #050505; color: white; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <pre>
+    AstroMax
+    Manual Location Search
+    Search
+    
+    Locating...
+    Ready
+    Clouds --
+    Wind Speed -- km/h
+    Seeing --
+    SQM (Est.) --
+    Catalog / Object
+    F-Ratio
+    Sensor Type
+        One-Shot Color (OSC)
+        Monochrome (L-RGB-SHO)
+    
+    Recommended Exposure Plan
+    ADVERSE WEATHER CONDITIONS DETECTED
+    </pre>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((reg) => console.log('Service Worker registriran!', reg))
+            .catch((err) => console.log('Greška pri registraciji:', err));
+        });
+      }
+    </script>
+
+</body>
+</html>
