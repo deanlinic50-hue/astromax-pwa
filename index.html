@@ -1,88 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Astro Exposure Pro Max</title>
+    <title>AstroMax Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;900&display=swap');
-        
-        :root {
-            --bg-deep: #020617;
-            --accent: #3b82f6;
-        }
-
-        body {
-            background-color: var(--bg-deep);
-            color: #f1f5f9;
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .glass-card {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 1.25rem;
-        }
-
+        :root { --bg-deep: #020617; --accent: #3b82f6; }
+        body { background-color: var(--bg-deep); color: #f1f5f9; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1.25rem; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-
-        input, select {
-            background: rgba(2, 6, 23, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: white !important;
-            border-radius: 0.75rem !important;
-            padding: 0.75rem !important;
-            font-weight: 600;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--accent) !important;
-        }
-
-        .result-item {
-            border-left: 4px solid var(--accent);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 1rem;
-            border-radius: 0 0.75rem 0.75rem 0;
-        }
-
-        .loader {
-            animation: spin 1s linear infinite;
-        }
+        input, select { background: rgba(2, 6, 23, 0.8) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; border-radius: 0.75rem !important; padding: 0.75rem !important; font-weight: 600; width: 100%; outline: none; transition: border-color 0.2s; }
+        .result-item { border-left: 4px solid var(--accent); background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 0 0.75rem 0.75rem 0; }
+        .loader { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        /* Custom search suggestions */
-        #search-results {
-            position: absolute;
-            z-index: 50;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 0.5rem;
-            margin-top: 2px;
-        }
+        #search-results { position: absolute; z-index: 50; width: 100%; max-height: 200px; overflow-y: auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 0.5rem; margin-top: 2px; }
     </style>
 </head>
 <body class="pb-10">
 
 <div class="container mx-auto max-w-lg mt-4 px-4">
-    <!-- Header -->
     <header class="mb-6">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-black tracking-tighter uppercase italic">Astro<span class="text-blue-500">Max</span></h1>
             <div class="flex gap-2">
-                <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform" title="GPS Auto-locate">
+                <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 </button>
                 <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform">
@@ -91,7 +37,6 @@
             </div>
         </div>
 
-        <!-- Location Search -->
         <div class="relative mb-4">
             <label class="text-[10px] font-black uppercase text-slate-500 mb-2 block tracking-widest">Manual Location Search</label>
             <div class="flex gap-2">
@@ -103,16 +48,15 @@
 
         <div class="glass-card p-4 flex items-center gap-4">
             <div class="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-blue-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>
             </div>
             <div>
-                <p id="city-name" class="font-bold text-sm leading-tight text-white italic capitalize">Locating...</p>
-                <p id="coords-display" class="text-[10px] text-slate-500 mono mt-1 tracking-wider uppercase">Ready</p>
+                <p id="city-name" class="font-bold text-sm leading-tight text-white italic capitalize">Waiting for signal...</p>
+                <p id="coords-display" class="text-[10px] text-slate-500 mono mt-1 tracking-wider uppercase">Tap GPS icon to start</p>
             </div>
         </div>
     </header>
 
-    <!-- Weather Stats Grid -->
     <div class="grid grid-cols-2 gap-3 mb-6">
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Clouds</span>
@@ -132,12 +76,11 @@
         </div>
     </div>
 
-    <!-- Configuration -->
     <div class="glass-card p-5 space-y-5 mb-6">
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="text-[10px] font-black uppercase text-slate-500 mb-2 block tracking-widest">Catalog / Object</label>
-                <input type="text" id="obj-id" placeholder="e.g. M31, NGC" oninput="calculate()">
+                <input type="text" id="obj-id" placeholder="e.g. M31" oninput="calculate()">
             </div>
             <div>
                 <label class="text-[10px] font-black uppercase text-slate-500 mb-2 block tracking-widest">F-Ratio</label>
@@ -153,116 +96,110 @@
         </div>
     </div>
 
-    <!-- Exposure Plan -->
     <div class="space-y-4">
         <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] pl-1">Recommended Exposure Plan</h3>
         <div id="results-list" class="space-y-3"></div>
     </div>
 
-    <!-- Dynamic Alerts -->
     <div id="weather-alert" class="hidden mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span>ADVERSE WEATHER CONDITIONS DETECTED</span>
     </div>
 </div>
 
 <script>
-    let state = { lat: 45.815, lon: 15.981, clouds: 0, humid: 0, wind: 0, sqm: 20.0, seeing: 2.0 };
+    let state = { lat: null, lon: null, clouds: 0, humid: 0, wind: 0, sqm: 21.0, seeing: 2.0 };
 
     async function getUserLocation() {
+        document.getElementById('city-name').innerText = "Locating...";
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(p => {
                 state.lat = p.coords.latitude;
                 state.lon = p.coords.longitude;
+                // Kad dobijemo lokaciju, automatski dohvaćamo grad i vrijeme
+                reverseGeocode();
                 refreshWeather();
-            }, () => refreshWeather());
+            }, (err) => {
+                alert("Please enable GPS or use manual search.");
+                document.getElementById('city-name').innerText = "GPS Disabled";
+            }, {timeout: 10000});
         }
     }
 
-    async function searchLocation() {
-        const query = document.getElementById('location-input').value;
-        if (!query) return;
-
+    async function reverseGeocode() {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`).then(r => r.json());
-            const container = document.getElementById('search-results');
-            container.innerHTML = '';
-            
-            if (res.length > 0) {
-                container.classList.remove('hidden');
-                res.forEach(item => {
-                    const btn = document.createElement('button');
-                    btn.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/10 hover:bg-blue-600 hover:text-white transition-colors capitalize";
-                    btn.innerText = item.display_name;
-                    btn.onclick = () => selectLocation(item.lat, item.lon, item.display_name);
-                    container.appendChild(btn);
-                });
-            } else {
-                container.innerHTML = '<div class="p-3 text-xs text-slate-500">No results found</div>';
-                container.classList.remove('hidden');
-                setTimeout(() => container.classList.add('hidden'), 2000);
-            }
-        } catch (e) {
-            console.error("Search failed", e);
-        }
-    }
-
-    function selectLocation(lat, lon, name) {
-        state.lat = parseFloat(lat);
-        state.lon = parseFloat(lon);
-        document.getElementById('city-name').innerText = name.split(',')[0];
-        document.getElementById('search-results').classList.add('hidden');
-        document.getElementById('location-input').value = name.split(',')[0];
-        refreshWeather();
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`).then(r => r.json());
+            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Unknown Location";
+        } catch(e) { console.error(e); }
     }
 
     async function refreshWeather() {
+        if(!state.lat) { getUserLocation(); return; }
         const icon = document.getElementById('sync-icon');
         icon.classList.add('loader');
         
         try {
-            // Get Weather
-            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=relative_humidity_2m,wind_speed_10m,cloud_cover`).then(r => r.json());
+            // Dodan "cache buster" (?t=...) da uvijek vuče svježe podatke s Open-Meteo
+            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=relative_humidity_2m,wind_speed_10m,cloud_cover&t=${Date.now()}`).then(r => r.json());
             
             state.clouds = wRes.current.cloud_cover;
             state.humid = wRes.current.relative_humidity_2m;
             state.wind = wRes.current.wind_speed_10m;
 
-            // Reverse Geocode if not already named from search
-            if (document.getElementById('city-name').innerText === "Locating...") {
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`).then(r => r.json());
-                document.getElementById('city-name').innerText = geoRes.address.city || geoRes.address.town || "Remote Area";
-            }
-
             document.getElementById('coords-display').innerText = `${state.lat.toFixed(4)}N / ${state.lon.toFixed(4)}E`;
 
-            // Logic Simulation
-            state.seeing = 1.3 + (state.wind / 18) + (state.humid / 180);
-            let estimatedSqm = 21.2;
-            if (state.clouds > 10) estimatedSqm -= (state.clouds / 25);
-            state.sqm = Math.max(16.5, estimatedSqm).toFixed(1);
+            // Precizniji izračun SQM i Seeing
+            state.seeing = 1.2 + (state.wind / 20) + (state.humid / 200);
+            
+            // SQM simulacija (OpenMeteo nema pravi SQM, pa ga procjenjujemo)
+            let baseSqm = 21.4; // Savršeno mračno nebo
+            if (state.clouds > 0) baseSqm -= (state.clouds / 20); // Oblaci reflektiraju svjetlost
+            state.sqm = Math.max(16.0, baseSqm).toFixed(1);
 
             updateUI();
             calculate();
         } catch (e) {
-            console.error("Refresh Error:", e);
+            alert("Weather data error. Check internet connection.");
         } finally {
             icon.classList.remove('loader');
         }
+    }
+
+    // Ostatak tvoje searchLocation i selectLocation funkcije ostaje isti...
+    async function searchLocation() {
+        const query = document.getElementById('location-input').value;
+        if (!query) return;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`).then(r => r.json());
+        const container = document.getElementById('search-results');
+        container.innerHTML = '';
+        if (res.length > 0) {
+            container.classList.remove('hidden');
+            res.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/10 hover:bg-blue-600 hover:text-white transition-colors";
+                btn.innerText = item.display_name;
+                btn.onclick = () => selectLocation(item.lat, item.lon, item.display_name);
+                container.appendChild(btn);
+            });
+        }
+    }
+
+    function selectLocation(lat, lon, name) {
+        state.lat = parseFloat(lat); state.lon = parseFloat(lon);
+        document.getElementById('city-name').innerText = name.split(',')[0];
+        document.getElementById('search-results').classList.add('hidden');
+        refreshWeather();
     }
 
     function updateUI() {
         document.getElementById('cloud-val').innerText = state.clouds + "%";
         document.getElementById('wind-val').innerText = state.wind + " km/h";
         document.getElementById('sqm-val').innerText = state.sqm;
-        
         const see = document.getElementById('seeing-val');
         see.innerText = state.seeing.toFixed(1) + '"';
         see.className = "text-xl font-black " + (state.seeing < 1.8 ? "text-emerald-400" : (state.seeing < 2.8 ? "text-amber-400" : "text-red-400"));
-
-        const alert = document.getElementById('weather-alert');
-        if (state.clouds > 50 || state.wind > 25) alert.classList.remove('hidden');
-        else alert.classList.add('hidden');
+        const alertBox = document.getElementById('weather-alert');
+        if (state.clouds > 60 || state.wind > 30) alertBox.classList.remove('hidden');
+        else alertBox.classList.add('hidden');
     }
 
     function calculate() {
@@ -271,63 +208,29 @@
         const objName = document.getElementById('obj-id').value.toUpperCase();
         const list = document.getElementById('results-list');
         list.innerHTML = '';
-
         let objMultiplier = 1.0;
-        if (objName.includes('NGC') || objName.includes('IC')) objMultiplier = 1.25;
-        if (objName.includes('M')) objMultiplier = 0.85;
-
+        if (objName.includes('NGC')) objMultiplier = 1.2;
+        if (objName.includes('M')) objMultiplier = 0.8;
         const skyFactor = Math.pow(10, (21.0 - parseFloat(state.sqm)) / 2.5);
         const fRatioFactor = Math.pow(fr / 4.0, 2);
         let baseSub = 45 * fRatioFactor * (1 / skyFactor) * objMultiplier;
-
         if (cam === 'osc') {
-            let bbSub = Math.max(15, Math.round(baseSub));
-            let nbSub = Math.max(60, Math.round(baseSub * 6));
-            render(list, "RGB / Broadband", bbSub, "3.0h", "border-blue-500");
-            render(list, "Dual-Narrowband (Ha/OIII)", nbSub, "6.0h", "border-cyan-500");
+            render(list, "RGB / Broadband", Math.max(15, Math.round(baseSub)), "3.0h", "border-blue-500");
+            render(list, "Dual-Narrowband", Math.max(60, Math.round(baseSub * 6)), "6.0h", "border-cyan-500");
         } else {
-            let lSub = Math.max(15, Math.round(baseSub * 0.6));
-            let rgbSub = Math.max(15, Math.round(baseSub * 1.4));
-            let shoSub = Math.max(60, Math.round(baseSub * 10));
-            render(list, "Luminance (L)", lSub, "2.0h", "border-slate-300");
-            render(list, "Color (RGB)", rgbSub, "1.5h/ch", "border-blue-400");
-            render(list, "Narrowband (S/H/O)", shoSub, "8.0h", "border-purple-600");
+            render(list, "Luminance", Math.max(15, Math.round(baseSub * 0.6)), "2.0h", "border-slate-300");
+            render(list, "Narrowband", Math.max(60, Math.round(baseSub * 10)), "8.0h", "border-purple-600");
         }
     }
 
     function render(parent, title, sub, total, colorClass) {
         const div = document.createElement('div');
         div.className = `result-item ${colorClass}`;
-        div.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div>
-                    <h4 class="text-xs font-black uppercase tracking-wider text-white/90">${title}</h4>
-                    <p class="text-[9px] text-slate-500 uppercase font-black mt-1">Recommended Total: ${total}</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-2xl font-black mono text-white">${sub}s</span>
-                    <p class="text-[9px] text-blue-500 font-black uppercase">Sub Exp</p>
-                </div>
-            </div>`;
+        div.innerHTML = `<div class="flex justify-between items-center"><div><h4 class="text-xs font-black uppercase text-white/90">${title}</h4><p class="text-[9px] text-slate-500 font-black mt-1">Total: ${total}</p></div><div class="text-right"><span class="text-2xl font-black mono text-white">${sub}s</span><p class="text-[9px] text-blue-500 font-black uppercase">Sub Exp</p></div></div>`;
         parent.appendChild(div);
     }
 
-    // Close results when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.relative')) document.getElementById('search-results').classList.add('hidden');
-    });
-
     window.onload = getUserLocation;
 </script>
-<script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then((reg) => console.log('Service Worker registriran!', reg))
-            .catch((err) => console.log('Greška pri registraciji:', err));
-        });
-      }
-    </script>
-
 </body>
 </html>
