@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AstroMax Pro Global</title>
+    <title>AstroMax Pro v4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;900&display=swap');
         body { background-color: #020617; color: #f1f5f9; font-family: 'Inter', sans-serif; transition: 0.3s; }
-        body.night-mode { background-color: #000 !important; color: #ff0000 !important; }
-        body.night-mode .glass-card { background: rgba(30, 0, 0, 0.6); border-color: rgba(255, 0, 0, 0.2); }
-        body.night-mode input, body.night-mode select { background: #1a0000 !important; color: #ff0000 !important; border-color: #440000 !important; }
-        body.night-mode .text-blue-500, body.night-mode .text-cyan-400, body.night-mode .text-emerald-400, body.night-mode .text-amber-500 { color: #ff0000 !important; }
-        body.night-mode .bg-blue-600 { background-color: #880000 !important; }
-        
+        body.night-mode { background-color: #000 !important; color: #f00 !important; }
+        body.night-mode .glass-card { background: rgba(20, 0, 0, 0.6); border-color: #400; }
+        body.night-mode input, body.night-mode select { background: #100 !important; color: #f00 !important; border-color: #500 !important; }
+        body.night-mode .text-blue-500, body.night-mode .text-cyan-400, body.night-mode .text-emerald-400, body.night-mode .text-amber-500 { color: #f00 !important; }
         .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1rem; }
         .mono-font { font-family: 'JetBrains Mono', monospace; }
-        input, select { background: rgba(2, 6, 23, 0.8) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; border-radius: 0.5rem !important; padding: 0.6rem !important; width: 100%; outline: none; }
-        .result-item { border-left: 4px solid #3b82f6; background: rgba(255, 255, 255, 0.03); padding: 0.8rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.75rem; }
-        body.night-mode .result-item { border-left-color: #ff0000; background: rgba(255, 0, 0, 0.05); }
-        #search-results { position: absolute; z-index: 50; width: 100%; max-height: 200px; overflow-y: auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 0.5rem; margin-top: 2px; }
+        input, select { background: rgba(2, 6, 23, 0.8)!important; border: 1px solid rgba(255, 255, 255, 0.1)!important; color: white!important; border-radius: 0.5rem!important; padding: 0.6rem!important; width: 100%; outline: none; }
+        .result-item { border-left: 4px solid #3b82f6; background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.75rem; }
+        body.night-mode .result-item { border-left-color: #f00; background: rgba(255,0,0,0.05); }
         .loader { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
@@ -28,37 +25,34 @@
 
 <div class="container mx-auto max-w-lg mt-4 px-4">
     <header class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-black uppercase italic tracking-tighter text-white">Astro<span class="text-blue-500">Max</span></h1>
+        <h1 class="text-2xl font-black uppercase italic tracking-tighter">Astro<span class="text-blue-500">Max</span></h1>
         <div class="flex gap-2">
-            <button onclick="toggleNightMode()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">👁️</button>
+            <button onclick="toggleNight()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">👁️</button>
             <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">📍</button>
-            <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400">
-                <svg id="sync-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8m0 0V3m0 5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16m0 0v5m0-5h5"/></svg>
-            </button>
+            <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 font-bold">↻</button>
         </div>
     </header>
 
     <div class="relative mb-4">
         <div class="flex gap-2">
-            <input type="text" id="loc-input" placeholder="Search city..." class="text-sm">
+            <input type="text" id="loc-search" placeholder="Search city..." class="text-sm">
             <button onclick="searchLoc()" class="bg-blue-600 px-5 rounded-lg font-bold text-xs uppercase text-white">Search</button>
         </div>
-        <div id="search-results" class="hidden shadow-2xl"></div>
+        <div id="search-results" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-lg mt-1 max-h-40 overflow-y-auto"></div>
     </div>
 
     <div class="glass-card p-4 flex items-center gap-4 mb-6">
-        <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xs">LOC</div>
+        <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xs underline">LOC</div>
         <div>
             <p id="city-name" class="font-bold text-sm text-white italic italic italic italic">Detecting...</p>
-            <p id="coords-display" class="text-[10px] text-slate-500 mono-font uppercase tracking-wider">0.0000N / 0.0000E</p>
+            <p id="coords-display" class="text-[10px] text-slate-500 mono-font uppercase">0.0000N / 0.0000E</p>
         </div>
-        <div class="ml-auto text-xl" id="moon-phase" title="Moon Phase">🌑</div>
     </div>
 
     <div class="grid grid-cols-2 gap-3 mb-8">
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Clouds</span>
-            <span id="cloud-val" class="text-xl font-black text-white">--%</span>
+            <span id="cloud-val" class="text-xl font-black">--%</span>
         </div>
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Wind Speed</span>
@@ -69,7 +63,7 @@
             <span id="seeing-val" class="text-xl font-black text-emerald-400">--</span>
         </div>
         <div class="glass-card p-3 text-center border-2 border-amber-500/20" onclick="manualSqm()">
-            <span class="text-[10px] font-black uppercase text-amber-500 block mb-1 underline italic">SQM (Est.)</span>
+            <span class="text-[10px] font-black uppercase text-amber-500 block mb-1 italic underline">SQM (Est.)</span>
             <span id="sqm-val" class="text-xl font-black text-amber-500">--</span>
         </div>
     </div>
@@ -98,12 +92,11 @@
 </div>
 
 <script>
-    let state = { lat: 44.85, lon: 13.85, clouds: 0, wind: 0, sqm: 21.0, baseSqm: 21.0, moonIllum: 0 };
+    let state = { lat: 44.86, lon: 13.84, clouds: 0, wind: 0, sqm: 18.5, baseSqm: 18.5 };
 
-    function toggleNightMode() { document.body.classList.toggle('night-mode'); }
+    function toggleNight() { document.body.classList.toggle('night-mode'); }
 
     function getUserLocation() {
-        if (!navigator.geolocation) return;
         navigator.geolocation.getCurrentPosition(p => {
             state.lat = p.coords.latitude; state.lon = p.coords.longitude;
             updateUI(); reverseGeocode(); refreshWeather();
@@ -111,7 +104,7 @@
     }
 
     function searchLoc() {
-        let q = document.getElementById('loc-input').value;
+        let q = document.getElementById('loc-search').value;
         if(!q) return;
         fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`)
         .then(r => r.json()).then(res => {
@@ -136,32 +129,25 @@
     function reverseGeocode() {
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`)
         .then(r => r.json()).then(res => {
-            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Remote Area";
-            // Osnovni SQM na bazi lokacije (gruba procjena ako nije Potočnica)
+            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Target Area";
             let full = res.display_name.toLowerCase();
-            if(full.includes("pag") || full.includes("potočnica")) state.baseSqm = 21.85;
-            else if(full.includes("zagreb") || full.includes("beograd")) state.baseSqm = 18.5;
-            else state.baseSqm = 20.8; // Ruralni prosjek
+            
+            // Ispravna Bortle logika za lokaciju
+            if(full.includes("potočnica") || full.includes("pag")) state.baseSqm = 21.85;
+            else if(full.includes("pula") || full.includes("zagreb") || full.includes("split")) state.baseSqm = 18.40; // Bortle 6-7
+            else state.baseSqm = 20.2; // Prosječna prigradska zona
+            
+            state.sqm = state.baseSqm;
+            updateUI(); calculate();
         });
     }
 
     function refreshWeather() {
-        let icon = document.getElementById('sync-icon');
-        icon.classList.add('loader');
-        
-        // Open-Meteo daje i cloud cover i vjetar
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=wind_speed_10m,cloud_cover&daily=shortwave_radiation_sum`)
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=wind_speed_10m,cloud_cover`)
         .then(r => r.json()).then(w => {
             state.clouds = w.current.cloud_cover;
             state.wind = w.current.wind_speed_10m;
-            
-            // Dinamički SQM: Bazni SQM minus utjecaj oblaka i mjeseca
-            // Oblaci u gradu posvjetljuju nebo, u divljini ga zatamnjuju. Ovdje koristimo "safety" model.
-            let cloudImpact = (state.clouds / 50) * 0.2; 
-            state.sqm = (state.baseSqm - cloudImpact).toFixed(2);
-            
             updateUI(); calculate();
-            icon.classList.remove('loader');
         });
     }
 
@@ -170,12 +156,21 @@
         document.getElementById('cloud-val').innerText = state.clouds + "%";
         document.getElementById('wind-val').innerText = state.wind + " km/h";
         document.getElementById('sqm-val').innerText = state.sqm;
-        document.getElementById('seeing-val').innerText = (1.2 + (state.wind/20)).toFixed(1) + '"';
+        document.getElementById('seeing-val').innerText = (1.3 + (state.wind/25)).toFixed(1) + '"';
     }
 
     function manualSqm() {
         let v = prompt("Enter manual SQM:", state.sqm);
-        if(v) { state.sqm = parseFloat(v); state.baseSqm = state.sqm; updateUI(); calculate(); }
+        if(v) { state.sqm = parseFloat(v); updateUI(); calculate(); }
+    }
+
+    // Funkcija za okrugle brojeve (korak 10 ili 30)
+    function roundExp(sec, max = 900) {
+        if (sec < 15) return 15;
+        if (sec > max) return max;
+        
+        let step = (sec > 120) ? 30 : 10; // Iznad 2 minute zaokružuj na 30s, ispod na 10s
+        return Math.round(sec / step) * step;
     }
 
     function calculate() {
@@ -184,16 +179,17 @@
         let list = document.getElementById('results-list');
         list.innerHTML = '';
 
-        let sky = Math.pow(2.51, (state.sqm - 20.0));
-        let base = 45 * sky * Math.pow(fr / 4.8, 2);
+        // Bortle faktor: SQM 18.4 (Pula) daje puno kraće ekspozicije nego 21.8 (Pag)
+        let skyFactor = Math.pow(2.51, (state.sqm - 20.0));
+        let base = 50 * skyFactor * Math.pow(fr / 4.8, 2);
 
         if (cam === 'osc') {
-            addRes(list, "RGB / Broadband", Math.round(base), "3.0h");
-            addRes(list, "Narrowband (Dual)", Math.round(base * 6), "6.0h");
+            addRes(list, "RGB / Broadband", roundExp(base), "3.0h");
+            addRes(list, "Narrowband (Dual)", roundExp(base * 8, 900), "6.0h");
         } else {
-            addRes(list, "Luminance", Math.round(base * 0.75), "2.0h");
-            addRes(list, "RGB Filters (Per Filter)", Math.round(base * 1.2), "3.0h");
-            addRes(list, "Narrowband (S/H/O)", Math.round(base * 10), "10h");
+            addRes(list, "Luminance", roundExp(base * 0.7), "2.0h");
+            addRes(list, "RGB Filters (Per Filter)", roundExp(base * 1.2), "3.0h");
+            addRes(list, "Narrowband (S/H/O)", roundExp(base * 12, 900), "10h");
         }
     }
 
@@ -202,8 +198,8 @@
         div.className = "result-item";
         div.innerHTML = `
             <div class="flex justify-between items-center">
-                <div><h4 class="text-[10px] font-black uppercase text-slate-400">${title}</h4><p class="text-[9px] text-slate-500">Target: ${total}</p></div>
-                <div class="text-right"><span class="text-2xl font-black mono-font text-white">${sub}s</span><p class="text-[8px] text-blue-500 font-bold uppercase">Subexp</p></div>
+                <div><h4 class="text-[10px] font-black uppercase text-slate-400">${title}</h4><p class="text-[9px] text-slate-500 uppercase">Target: ${total}</p></div>
+                <div class="text-right"><span class="text-2xl font-black mono-font text-white">${sub}s</span><p class="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Subexp</p></div>
             </div>`;
         parent.appendChild(div);
     }
