@@ -28,7 +28,7 @@
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-black tracking-tighter uppercase italic">Astro<span class="text-blue-500">Max</span></h1>
             <div class="flex gap-2">
-                <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform">
+                <button onclick="getUserLocation()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform" title="GPS Auto-locate">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 </button>
                 <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 active:scale-95 transition-transform">
@@ -51,8 +51,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>
             </div>
             <div>
-                <p id="city-name" class="font-bold text-sm leading-tight text-white italic capitalize">Waiting for signal...</p>
-                <p id="coords-display" class="text-[10px] text-slate-500 mono mt-1 tracking-wider uppercase">Tap GPS icon to start</p>
+                <p id="city-name" class="font-bold text-sm leading-tight text-white italic capitalize">Locating...</p>
+                <p id="coords-display" class="text-[10px] text-slate-500 mono mt-1 tracking-wider uppercase">Syncing GPS...</p>
             </div>
         </div>
     </header>
@@ -107,89 +107,102 @@
 </div>
 
 <script>
-    let state = { lat: null, lon: null, clouds: 0, humid: 0, wind: 0, sqm: 21.0, seeing: 2.0 };
+    let state = { lat: null, lon: null, clouds: 0, wind: 0, humid: 0, sqm: 21.0, seeing: 2.0 };
 
+    // --- 1. GEOLOKACIJA ---
     async function getUserLocation() {
-        document.getElementById('city-name').innerText = "Locating...";
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(p => {
+        const cityNameEl = document.getElementById('city-name');
+        const coordsEl = document.getElementById('coords-display');
+        cityNameEl.innerText = "Locating...";
+
+        if (!navigator.geolocation) {
+            alert("GPS not supported.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (p) => {
                 state.lat = p.coords.latitude;
                 state.lon = p.coords.longitude;
-                // Kad dobijemo lokaciju, automatski dohvaćamo grad i vrijeme
-                reverseGeocode();
-                refreshWeather();
-            }, (err) => {
-                alert("Please enable GPS or use manual search.");
-                document.getElementById('city-name').innerText = "GPS Disabled";
-            }, {timeout: 10000});
-        }
+                coordsEl.innerText = `${state.lat.toFixed(4)}N / ${state.lon.toFixed(4)}E`;
+                
+                // Odmah dohvati grad i vrijeme
+                await reverseGeocode();
+                await refreshWeather();
+            },
+            (err) => {
+                alert("GPS Error: Please enable location in your device settings.");
+                cityNameEl.innerText = "Location Error";
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     }
 
     async function reverseGeocode() {
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`).then(r => r.json());
-            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Unknown Location";
-        } catch(e) { console.error(e); }
+            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Current Location";
+        } catch(e) { console.error("Geocoding failed", e); }
     }
 
+    // --- 2. VRIJEME ---
     async function refreshWeather() {
         if(!state.lat) { getUserLocation(); return; }
         const icon = document.getElementById('sync-icon');
         icon.classList.add('loader');
         
         try {
-            // Dodan "cache buster" (?t=...) da uvijek vuče svježe podatke s Open-Meteo
             const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=relative_humidity_2m,wind_speed_10m,cloud_cover&t=${Date.now()}`).then(r => r.json());
             
             state.clouds = wRes.current.cloud_cover;
             state.humid = wRes.current.relative_humidity_2m;
             state.wind = wRes.current.wind_speed_10m;
 
-            document.getElementById('coords-display').innerText = `${state.lat.toFixed(4)}N / ${state.lon.toFixed(4)}E`;
-
-            // Precizniji izračun SQM i Seeing
-            state.seeing = 1.2 + (state.wind / 20) + (state.humid / 200);
-            
-            // SQM simulacija (OpenMeteo nema pravi SQM, pa ga procjenjujemo)
-            let baseSqm = 21.4; // Savršeno mračno nebo
-            if (state.clouds > 0) baseSqm -= (state.clouds / 20); // Oblaci reflektiraju svjetlost
-            state.sqm = Math.max(16.0, baseSqm).toFixed(1);
+            // Procjena SQM i Seeing
+            state.seeing = 1.3 + (state.wind / 20) + (state.humid / 200);
+            let baseSqm = 21.5 - (state.clouds / 25);
+            state.sqm = Math.max(16.5, baseSqm).toFixed(1);
 
             updateUI();
             calculate();
         } catch (e) {
-            alert("Weather data error. Check internet connection.");
+            console.error(e);
         } finally {
             icon.classList.remove('loader');
         }
     }
 
-    // Ostatak tvoje searchLocation i selectLocation funkcije ostaje isti...
+    // --- 3. SEARCH ---
     async function searchLocation() {
         const query = document.getElementById('location-input').value;
         if (!query) return;
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`).then(r => r.json());
-        const container = document.getElementById('search-results');
-        container.innerHTML = '';
-        if (res.length > 0) {
-            container.classList.remove('hidden');
-            res.forEach(item => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/10 hover:bg-blue-600 hover:text-white transition-colors";
-                btn.innerText = item.display_name;
-                btn.onclick = () => selectLocation(item.lat, item.lon, item.display_name);
-                container.appendChild(btn);
-            });
-        }
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`).then(r => r.json());
+            const container = document.getElementById('search-results');
+            container.innerHTML = '';
+            if (res.length > 0) {
+                container.classList.remove('hidden');
+                res.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/10 hover:bg-blue-600 transition-colors";
+                    btn.innerText = item.display_name;
+                    btn.onclick = () => selectLocation(item.lat, item.lon, item.display_name);
+                    container.appendChild(btn);
+                });
+            }
+        } catch(e) { console.error(e); }
     }
 
     function selectLocation(lat, lon, name) {
-        state.lat = parseFloat(lat); state.lon = parseFloat(lon);
+        state.lat = parseFloat(lat);
+        state.lon = parseFloat(lon);
         document.getElementById('city-name').innerText = name.split(',')[0];
+        document.getElementById('coords-display').innerText = `${state.lat.toFixed(4)}N / ${state.lon.toFixed(4)}E`;
         document.getElementById('search-results').classList.add('hidden');
         refreshWeather();
     }
 
+    // --- 4. UI & CALC ---
     function updateUI() {
         document.getElementById('cloud-val').innerText = state.clouds + "%";
         document.getElementById('wind-val').innerText = state.wind + " km/h";
@@ -198,7 +211,7 @@
         see.innerText = state.seeing.toFixed(1) + '"';
         see.className = "text-xl font-black " + (state.seeing < 1.8 ? "text-emerald-400" : (state.seeing < 2.8 ? "text-amber-400" : "text-red-400"));
         const alertBox = document.getElementById('weather-alert');
-        if (state.clouds > 60 || state.wind > 30) alertBox.classList.remove('hidden');
+        if (state.clouds > 60 || state.wind > 25) alertBox.classList.remove('hidden');
         else alertBox.classList.add('hidden');
     }
 
@@ -209,28 +222,37 @@
         const list = document.getElementById('results-list');
         list.innerHTML = '';
         let objMultiplier = 1.0;
-        if (objName.includes('NGC')) objMultiplier = 1.2;
-        if (objName.includes('M')) objMultiplier = 0.8;
+        if (objName.includes('NGC')) objMultiplier = 1.25;
+        if (objName.includes('M')) objMultiplier = 0.85;
         const skyFactor = Math.pow(10, (21.0 - parseFloat(state.sqm)) / 2.5);
         const fRatioFactor = Math.pow(fr / 4.0, 2);
         let baseSub = 45 * fRatioFactor * (1 / skyFactor) * objMultiplier;
+        
         if (cam === 'osc') {
             render(list, "RGB / Broadband", Math.max(15, Math.round(baseSub)), "3.0h", "border-blue-500");
-            render(list, "Dual-Narrowband", Math.max(60, Math.round(baseSub * 6)), "6.0h", "border-cyan-500");
+            render(list, "Narrowband (Ha/OIII)", Math.max(60, Math.round(baseSub * 6)), "6.0h", "border-cyan-500");
         } else {
-            render(list, "Luminance", Math.max(15, Math.round(baseSub * 0.6)), "2.0h", "border-slate-300");
-            render(list, "Narrowband", Math.max(60, Math.round(baseSub * 10)), "8.0h", "border-purple-600");
+            render(list, "Luminance (L)", Math.max(15, Math.round(baseSub * 0.6)), "2.0h", "border-slate-300");
+            render(list, "Narrowband (S/H/O)", Math.max(60, Math.round(baseSub * 10)), "8.0h", "border-purple-600");
         }
     }
 
     function render(parent, title, sub, total, colorClass) {
         const div = document.createElement('div');
         div.className = `result-item ${colorClass}`;
-        div.innerHTML = `<div class="flex justify-between items-center"><div><h4 class="text-xs font-black uppercase text-white/90">${title}</h4><p class="text-[9px] text-slate-500 font-black mt-1">Total: ${total}</p></div><div class="text-right"><span class="text-2xl font-black mono text-white">${sub}s</span><p class="text-[9px] text-blue-500 font-black uppercase">Sub Exp</p></div></div>`;
+        div.innerHTML = `<div class="flex justify-between items-center"><div><h4 class="text-xs font-black uppercase text-white/90">${title}</h4><p class="text-[9px] text-slate-500 font-black mt-1">Total Target: ${total}</p></div><div class="text-right"><span class="text-2xl font-black mono text-white">${sub}s</span><p class="text-[9px] text-blue-500 font-black uppercase">Sub Exp</p></div></div>`;
         parent.appendChild(div);
     }
 
+    // Pokreni automatsko lociranje čim se stranica učita
     window.onload = getUserLocation;
+
+    // PWA Service Worker Registracija
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+        });
+    }
 </script>
 </body>
 </html>
