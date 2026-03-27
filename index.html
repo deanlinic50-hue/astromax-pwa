@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AstroMax Pro v7</title>
+    <title>AstroMax Pro v8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;900&display=swap');
@@ -16,6 +16,7 @@
         input, select { background: rgba(2, 6, 23, 0.8)!important; border: 1px solid rgba(255, 255, 255, 0.1)!important; color: white!important; border-radius: 0.5rem!important; padding: 0.6rem!important; width: 100%; outline: none; }
         .result-item { border-left: 4px solid #3b82f6; background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.75rem; }
         body.night-mode .result-item { border-left-color: #f00; background: rgba(255,0,0,0.05); }
+        #search-results { position: absolute; z-index: 100; width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 0.5rem; margin-top: 4px; max-height: 200px; overflow-y: auto; }
     </style>
 </head>
 <body class="pb-10">
@@ -29,6 +30,14 @@
             <button onclick="refreshWeather()" class="p-2 bg-blue-500/10 rounded-full text-blue-400 font-bold">↻</button>
         </div>
     </header>
+
+    <div class="relative mb-6">
+        <div class="flex gap-2">
+            <input type="text" id="loc-input" placeholder="Search city (e.g. Pula, Potočnica)..." class="text-sm">
+            <button onclick="searchLoc()" class="bg-blue-600 px-5 rounded-lg font-bold text-xs uppercase text-white">Search</button>
+        </div>
+        <div id="search-results" class="hidden shadow-2xl"></div>
+    </div>
 
     <div class="glass-card p-4 flex items-center gap-4 mb-6">
         <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xs underline">LOC</div>
@@ -92,14 +101,37 @@
         });
     }
 
+    function searchLoc() {
+        let q = document.getElementById('loc-input').value;
+        if(!q) return;
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`)
+        .then(r => r.json()).then(res => {
+            let container = document.getElementById('search-results');
+            container.innerHTML = '';
+            if(res.length > 0) {
+                container.classList.remove('hidden');
+                res.forEach(item => {
+                    let b = document.createElement('button');
+                    b.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/5 hover:bg-blue-600";
+                    b.innerText = item.display_name;
+                    b.onclick = () => {
+                        state.lat = parseFloat(item.lat); state.lon = parseFloat(item.lon);
+                        container.classList.add('hidden');
+                        reverseGeocode(); refreshWeather();
+                    };
+                    container.appendChild(b);
+                });
+            }
+        });
+    }
+
     function reverseGeocode() {
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`)
         .then(r => r.json()).then(res => {
             document.getElementById('city-name').innerText = res.address.city || res.address.town || "Target Area";
             let full = res.display_name.toLowerCase();
-            // Pula / Gradovi = Bortle 6-7
-            if(full.includes("pula") || full.includes("zagreb") || full.includes("rijeka")) state.sqm = 18.40;
-            else if(full.includes("potočnica")) state.sqm = 21.85;
+            if(full.includes("pula") || full.includes("zagreb")) state.sqm = 18.40;
+            else if(full.includes("potočnica") || full.includes("pag")) state.sqm = 21.85;
             else state.sqm = 20.2;
             updateUI();
         });
@@ -120,7 +152,6 @@
         document.getElementById('cloud-val').innerText = state.clouds + "%";
         document.getElementById('hum-val').innerText = state.humidity + "%";
         document.getElementById('sqm-val').innerText = state.sqm;
-        // Seeing kalkulacija temeljena na vjetru i vlazi
         let baseSeeing = 1.2 + (state.wind / 20) + (state.humidity / 200);
         document.getElementById('seeing-val').innerText = baseSeeing.toFixed(1) + '"';
         calculate();
@@ -152,10 +183,8 @@
             addRes(list, "RGB / Broadband", roundExp(baseLum), "3.0h");
             addRes(list, "Narrowband (Dual)", roundExp(baseLum * 8, nbLimit), "6.0h");
         } else {
-            // LUMINANCE = 4 puta više ukupne integracije od RGB (npr. 4h L : 1h RGB total)
-            addRes(list, "Luminance (Deep Detail)", roundExp(baseLum), "4.0h");
-            // RGB EXPOSURE = Dulji subovi (1.5x), ukupno manje integracije
-            addRes(list, "RGB Filters (Color Only)", roundExp(baseLum * 1.5), "1.0h"); 
+            addRes(list, "Luminance (4:1 Ratio)", roundExp(baseLum), "4.0h");
+            addRes(list, "RGB Filters (Longer Sub)", roundExp(baseLum * 1.5), "1.0h"); 
             addRes(list, "Narrowband (S/H/O)", roundExp(baseLum * 12, nbLimit), "10h");
         }
     }
