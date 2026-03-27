@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AstroMax Pro v4</title>
+    <title>AstroMax Pro v6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;900&display=swap');
-        body { background-color: #020617; color: #f1f5f9; font-family: 'Inter', sans-serif; transition: 0.3s; }
+        body { background-color: #020617; color: #f1f5f9; font-family: 'Inter', sans-serif; }
         body.night-mode { background-color: #000 !important; color: #f00 !important; }
         body.night-mode .glass-card { background: rgba(20, 0, 0, 0.6); border-color: #400; }
         body.night-mode input, body.night-mode select { background: #100 !important; color: #f00 !important; border-color: #500 !important; }
-        body.night-mode .text-blue-500, body.night-mode .text-cyan-400, body.night-mode .text-emerald-400, body.night-mode .text-amber-500 { color: #f00 !important; }
         .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1rem; }
         .mono-font { font-family: 'JetBrains Mono', monospace; }
         input, select { background: rgba(2, 6, 23, 0.8)!important; border: 1px solid rgba(255, 255, 255, 0.1)!important; color: white!important; border-radius: 0.5rem!important; padding: 0.6rem!important; width: 100%; outline: none; }
         .result-item { border-left: 4px solid #3b82f6; background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.75rem; }
         body.night-mode .result-item { border-left-color: #f00; background: rgba(255,0,0,0.05); }
-        .loader { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="pb-10">
@@ -33,18 +30,10 @@
         </div>
     </header>
 
-    <div class="relative mb-4">
-        <div class="flex gap-2">
-            <input type="text" id="loc-search" placeholder="Search city..." class="text-sm">
-            <button onclick="searchLoc()" class="bg-blue-600 px-5 rounded-lg font-bold text-xs uppercase text-white">Search</button>
-        </div>
-        <div id="search-results" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-lg mt-1 max-h-40 overflow-y-auto"></div>
-    </div>
-
     <div class="glass-card p-4 flex items-center gap-4 mb-6">
         <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xs underline">LOC</div>
         <div>
-            <p id="city-name" class="font-bold text-sm text-white italic italic italic italic">Detecting...</p>
+            <p id="city-name" class="font-bold text-sm text-white italic">Detecting...</p>
             <p id="coords-display" class="text-[10px] text-slate-500 mono-font uppercase">0.0000N / 0.0000E</p>
         </div>
     </div>
@@ -53,14 +42,6 @@
         <div class="glass-card p-3 text-center">
             <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Clouds</span>
             <span id="cloud-val" class="text-xl font-black">--%</span>
-        </div>
-        <div class="glass-card p-3 text-center">
-            <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Wind Speed</span>
-            <span id="wind-val" class="text-xl font-black text-cyan-400">-- km/h</span>
-        </div>
-        <div class="glass-card p-3 text-center">
-            <span class="text-[10px] font-black uppercase text-slate-500 block mb-1">Seeing</span>
-            <span id="seeing-val" class="text-xl font-black text-emerald-400">--</span>
         </div>
         <div class="glass-card p-3 text-center border-2 border-amber-500/20" onclick="manualSqm()">
             <span class="text-[10px] font-black uppercase text-amber-500 block mb-1 italic underline">SQM (Est.)</span>
@@ -71,7 +52,7 @@
     <div class="glass-card p-5 space-y-4 mb-8">
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="text-[10px] font-black uppercase text-slate-500 mb-1 block">Object (M/NGC)</label>
+                <label class="text-[10px] font-black uppercase text-slate-500 mb-1 block">Object</label>
                 <input type="text" id="obj-id" placeholder="M31" oninput="calculate()">
             </div>
             <div>
@@ -83,7 +64,7 @@
             <label class="text-[10px] font-black uppercase text-slate-500 mb-1 block">Sensor Type</label>
             <select id="cam-type" onchange="calculate()">
                 <option value="osc">One-Shot Color (OSC)</option>
-                <option value="mono">Monochrome (L-RGB-SHO)</option>
+                <option value="mono" selected>Monochrome (L-RGB-SHO)</option>
             </select>
         </div>
     </div>
@@ -92,84 +73,53 @@
 </div>
 
 <script>
-    let state = { lat: 44.86, lon: 13.84, clouds: 0, wind: 0, sqm: 18.5, baseSqm: 18.5 };
+    let state = { lat: 44.86, lon: 13.84, clouds: 0, sqm: 18.40 };
 
     function toggleNight() { document.body.classList.toggle('night-mode'); }
 
     function getUserLocation() {
         navigator.geolocation.getCurrentPosition(p => {
             state.lat = p.coords.latitude; state.lon = p.coords.longitude;
-            updateUI(); reverseGeocode(); refreshWeather();
-        });
-    }
-
-    function searchLoc() {
-        let q = document.getElementById('loc-search').value;
-        if(!q) return;
-        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`)
-        .then(r => r.json()).then(res => {
-            let container = document.getElementById('search-results');
-            container.innerHTML = '';
-            if(res.length > 0) {
-                container.classList.remove('hidden');
-                res.forEach(item => {
-                    let b = document.createElement('button');
-                    b.className = "w-full text-left p-3 text-sm text-slate-300 border-b border-white/5 hover:bg-blue-600";
-                    b.innerText = item.display_name;
-                    b.onclick = () => {
-                        state.lat = parseFloat(item.lat); state.lon = parseFloat(item.lon);
-                        container.classList.add('hidden'); updateUI(); reverseGeocode(); refreshWeather();
-                    };
-                    container.appendChild(b);
-                });
-            }
+            reverseGeocode(); refreshWeather();
         });
     }
 
     function reverseGeocode() {
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`)
         .then(r => r.json()).then(res => {
-            document.getElementById('city-name').innerText = res.address.city || res.address.town || res.address.village || "Target Area";
+            document.getElementById('city-name').innerText = res.address.city || res.address.town || "Target Area";
             let full = res.display_name.toLowerCase();
-            
-            // Ispravna Bortle logika za lokaciju
-            if(full.includes("potočnica") || full.includes("pag")) state.baseSqm = 21.85;
-            else if(full.includes("pula") || full.includes("zagreb") || full.includes("split")) state.baseSqm = 18.40; // Bortle 6-7
-            else state.baseSqm = 20.2; // Prosječna prigradska zona
-            
-            state.sqm = state.baseSqm;
-            updateUI(); calculate();
+            if(full.includes("pula") || full.includes("zagreb")) state.sqm = 18.40;
+            else if(full.includes("potočnica")) state.sqm = 21.85;
+            else state.sqm = 20.2;
+            updateUI();
         });
     }
 
     function refreshWeather() {
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=wind_speed_10m,cloud_cover`)
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&current=cloud_cover`)
         .then(r => r.json()).then(w => {
             state.clouds = w.current.cloud_cover;
-            state.wind = w.current.wind_speed_10m;
-            updateUI(); calculate();
+            updateUI();
         });
     }
 
     function updateUI() {
         document.getElementById('coords-display').innerText = `${state.lat.toFixed(4)}N / ${state.lon.toFixed(4)}E`;
         document.getElementById('cloud-val').innerText = state.clouds + "%";
-        document.getElementById('wind-val').innerText = state.wind + " km/h";
         document.getElementById('sqm-val').innerText = state.sqm;
-        document.getElementById('seeing-val').innerText = (1.3 + (state.wind/25)).toFixed(1) + '"';
+        calculate();
     }
 
     function manualSqm() {
         let v = prompt("Enter manual SQM:", state.sqm);
-        if(v) { state.sqm = parseFloat(v); updateUI(); calculate(); }
+        if(v) { state.sqm = parseFloat(v); updateUI(); }
     }
 
-    // Funkcija za okrugle brojeve (korak 10 ili 30)
-    function roundExp(sec, max = 900) {
-        if (sec < 15) return 15;
+    function roundExp(sec, minLimit = 15, max = 900) {
+        if (sec < minLimit) return minLimit;
         if (sec > max) return max;
-        
-        let step = (sec > 120) ? 30 : 10; // Iznad 2 minute zaokružuj na 30s, ispod na 10s
+        let step = (sec > 120) ? 30 : 10;
         return Math.round(sec / step) * step;
     }
 
@@ -179,17 +129,21 @@
         let list = document.getElementById('results-list');
         list.innerHTML = '';
 
-        // Bortle faktor: SQM 18.4 (Pula) daje puno kraće ekspozicije nego 21.8 (Pag)
         let skyFactor = Math.pow(2.51, (state.sqm - 20.0));
-        let base = 50 * skyFactor * Math.pow(fr / 4.8, 2);
+        let baseLum = 50 * skyFactor * Math.pow(fr / 4.8, 2);
+        
+        // Donja granica za Narrowband u Bortle 6-7 (SQM < 19)
+        let nbLimit = (state.sqm < 19.0) ? 180 : 60;
 
         if (cam === 'osc') {
-            addRes(list, "RGB / Broadband", roundExp(base), "3.0h");
-            addRes(list, "Narrowband (Dual)", roundExp(base * 8, 900), "6.0h");
+            addRes(list, "RGB / Broadband", roundExp(baseLum), "3.0h");
+            addRes(list, "Narrowband (Dual)", roundExp(baseLum * 8, nbLimit), "6.0h");
         } else {
-            addRes(list, "Luminance", roundExp(base * 0.7), "2.0h");
-            addRes(list, "RGB Filters (Per Filter)", roundExp(base * 1.2), "3.0h");
-            addRes(list, "Narrowband (S/H/O)", roundExp(base * 12, 900), "10h");
+            // LUMINANCE = 4 puta više ukupne integracije od RGB (npr. 4h L : 1h RGB total)
+            addRes(list, "Luminance (Deep Detail)", roundExp(baseLum), "4.0h");
+            // RGB EXPOSURE = Dulji subovi od Luminancea (faktor 1.5x), manja ukupna integracija
+            addRes(list, "RGB Filters (Color Only)", roundExp(baseLum * 1.5), "1.0h"); 
+            addRes(list, "Narrowband (S/H/O)", roundExp(baseLum * 12, nbLimit), "10h");
         }
     }
 
@@ -198,7 +152,7 @@
         div.className = "result-item";
         div.innerHTML = `
             <div class="flex justify-between items-center">
-                <div><h4 class="text-[10px] font-black uppercase text-slate-400">${title}</h4><p class="text-[9px] text-slate-500 uppercase">Target: ${total}</p></div>
+                <div><h4 class="text-[10px] font-black uppercase text-slate-400">${title}</h4><p class="text-[9px] text-slate-500 uppercase">Target Total: ${total}</p></div>
                 <div class="text-right"><span class="text-2xl font-black mono-font text-white">${sub}s</span><p class="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Subexp</p></div>
             </div>`;
         parent.appendChild(div);
